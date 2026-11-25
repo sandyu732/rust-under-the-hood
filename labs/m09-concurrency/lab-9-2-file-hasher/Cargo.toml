@@ -1,0 +1,14 @@
+[package]
+name = "lab-9-2-file-hasher"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[dependencies]
+walkdir = { workspace = true }
+sha2 = { workspace = true }
+hex = { workspace = true }
+rayon = { workspace = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }

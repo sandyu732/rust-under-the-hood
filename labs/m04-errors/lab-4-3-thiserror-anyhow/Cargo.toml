@@ -1,0 +1,12 @@
+[package]
+name = "lab-4-3-thiserror-anyhow"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[dependencies]
+thiserror = { workspace = true }
+anyhow = { workspace = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }

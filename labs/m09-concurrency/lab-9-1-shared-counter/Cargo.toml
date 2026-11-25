@@ -1,0 +1,10 @@
+[package]
+name = "lab-9-1-shared-counter"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[dependencies]
+
+[features]
+broken = []

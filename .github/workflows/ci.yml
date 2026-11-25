@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+env:
+  CARGO_TERM_COLOR: always
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          components: clippy, rustfmt
+      - uses: Swatinem/rust-cache@v2
+
+      - name: Formatting
+        run: cargo fmt --all --check
+
+      # On `main` the labs are stubs, so we only check that everything compiles.
+      - name: Compile all labs and tests
+        run: cargo test --workspace --no-run
+
+      # The reference solutions must pass every assessment and be clippy-clean.
+      - name: Clippy (solutions branch)
+        if: github.ref_name == 'solutions'
+        run: cargo clippy --workspace --all-targets -- -D warnings
+      - name: Run all assessments (solutions branch)
+        if: github.ref_name == 'solutions'
+        run: cargo test --workspace

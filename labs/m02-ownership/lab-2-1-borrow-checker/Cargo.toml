@@ -1,0 +1,11 @@
+[package]
+name = "lab-2-1-borrow-checker"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[dependencies]
+
+[features]
+# `cargo build -p lab-2-1-borrow-checker --features broken` shows the five errors.
+broken = []

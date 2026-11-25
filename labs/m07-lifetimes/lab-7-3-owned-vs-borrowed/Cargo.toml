@@ -1,0 +1,11 @@
+[package]
+name = "lab-7-3-owned-vs-borrowed"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[dependencies]
+lab-7-2-http-parser = { path = "../lab-7-2-http-parser" }
+
+[features]
+broken = []

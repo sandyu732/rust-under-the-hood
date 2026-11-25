@@ -1,0 +1,9 @@
+[package]
+name = "lab-8-1-calculator"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[dependencies]
+lab-3-3-tokenizer = { path = "../../m03-data-modelling/lab-3-3-tokenizer" }
+thiserror = { workspace = true }

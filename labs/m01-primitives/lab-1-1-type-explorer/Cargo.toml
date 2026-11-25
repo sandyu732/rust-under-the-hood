@@ -1,0 +1,7 @@
+[package]
+name = "lab-1-1-type-explorer"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[dependencies]

@@ -1,0 +1,10 @@
+[package]
+name = "lab-4-2-config-loader"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[dependencies]
+
+[dev-dependencies]
+tempfile = { workspace = true }

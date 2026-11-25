@@ -1,0 +1,10 @@
+[package]
+name = "lab-7-1-longest"
+version.workspace = true
+edition.workspace = true
+publish.workspace = true
+
+[dependencies]
+
+[features]
+broken = []
