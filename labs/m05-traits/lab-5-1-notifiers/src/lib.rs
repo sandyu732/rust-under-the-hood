@@ -1,4 +1,3 @@
-#![allow(unused)] // TODO: delete this line once the lab is done
 //! Lab 5.1 — Notifier plugins: dynamic vs static dispatch.
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -14,7 +13,12 @@ pub trait Notifier {
     /// Default method: send each message, stopping at the first error.
     /// Implementors get this for free.
     fn send_many(&mut self, msgs: &[&str]) -> Result<(), NotifyError> {
-        todo!("lab-5-1-notifiers: implement me")
+        // SOLUTION-START
+        for m in msgs {
+            self.send(m)?;
+        }
+        Ok(())
+        // SOLUTION-END
     }
 }
 
@@ -42,7 +46,11 @@ impl Notifier for Console {
         "console"
     }
     fn send(&mut self, msg: &str) -> Result<(), NotifyError> {
-        todo!("lab-5-1-notifiers: implement me")
+        // SOLUTION-START
+        println!("[console] {msg}");
+        self.sent.push(msg.to_string());
+        Ok(())
+        // SOLUTION-END
     }
 }
 
@@ -51,7 +59,13 @@ impl Notifier for Email {
         "email"
     }
     fn send(&mut self, msg: &str) -> Result<(), NotifyError> {
-        todo!("lab-5-1-notifiers: implement me")
+        // SOLUTION-START
+        if !self.to.contains('@') {
+            return Err(NotifyError::InvalidTarget(self.to.clone()));
+        }
+        self.outbox.push(format!("To: {}\n{msg}", self.to));
+        Ok(())
+        // SOLUTION-END
     }
 }
 
@@ -60,7 +74,16 @@ impl Notifier for Webhook {
         "webhook"
     }
     fn send(&mut self, msg: &str) -> Result<(), NotifyError> {
-        todo!("lab-5-1-notifiers: implement me")
+        // SOLUTION-START
+        if !self.url.starts_with("https://") {
+            return Err(NotifyError::InvalidTarget(self.url.clone()));
+        }
+        if msg.is_empty() {
+            return Err(NotifyError::Rejected("empty message".into()));
+        }
+        self.delivered.push(msg.to_string());
+        Ok(())
+        // SOLUTION-END
     }
 }
 
@@ -70,11 +93,21 @@ pub fn broadcast(
     notifiers: &mut [Box<dyn Notifier>],
     msg: &str,
 ) -> Vec<(String, Result<(), NotifyError>)> {
-    todo!("lab-5-1-notifiers: implement me")
+    // SOLUTION-START
+    notifiers
+        .iter_mut()
+        .map(|n| (n.name().to_string(), n.send(msg)))
+        .collect()
+    // SOLUTION-END
 }
 
 /// Static dispatch: every element is the SAME concrete type `N`.
 /// Returns how many sends succeeded. (Try passing a mix — it won't compile.)
 pub fn send_all<N: Notifier>(notifiers: &mut [N], msg: &str) -> usize {
-    todo!("lab-5-1-notifiers: implement me")
+    // SOLUTION-START
+    notifiers
+        .iter_mut()
+        .filter_map(|n| n.send(msg).ok())
+        .count()
+    // SOLUTION-END
 }

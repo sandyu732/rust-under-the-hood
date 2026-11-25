@@ -1,4 +1,3 @@
-#![allow(unused)] // TODO: delete this line once the lab is done
 //! Lab 10.1 — Concurrent URL checker with bounded concurrency and timeouts.
 //!
 //!   cargo run -p lab-10-1-url-checker -- urls.txt
@@ -41,12 +40,47 @@ where
     F: Fn(String) -> Fut + Clone + Send + 'static,
     Fut: Future<Output = Result<u16, String>> + Send + 'static,
 {
-    todo!("lab-10-1-url-checker: implement me")
+    // SOLUTION-START
+    let permits = Arc::new(Semaphore::new(concurrency.max(1)));
+    let handles: Vec<_> = urls
+        .into_iter()
+        .map(|url| {
+            let permits = Arc::clone(&permits);
+            let fetch = fetch.clone();
+            tokio::spawn(async move {
+                let _permit = permits.acquire_owned().await.expect("semaphore closed");
+                let start = Instant::now();
+                let outcome = match timeout(per_request, fetch(url.clone())).await {
+                    Ok(Ok(status)) => Outcome::Ok {
+                        status,
+                        latency: start.elapsed(),
+                    },
+                    Ok(Err(e)) => Outcome::Failed(e),
+                    Err(_) => Outcome::Timeout,
+                };
+                CheckResult { url, outcome }
+            })
+        })
+        .collect();
+    let mut results = Vec::with_capacity(handles.len());
+    for h in handles {
+        results.push(h.await.expect("task panicked"));
+    }
+    results
+    // SOLUTION-END
 }
 
 /// Count results by kind: (ok, timeouts, failures).
 pub fn summarize(results: &[CheckResult]) -> (usize, usize, usize) {
-    todo!("lab-10-1-url-checker: implement me")
+    // SOLUTION-START
+    results
+        .iter()
+        .fold((0, 0, 0), |(o, t, f), r| match r.outcome {
+            Outcome::Ok { .. } => (o + 1, t, f),
+            Outcome::Timeout => (o, t + 1, f),
+            Outcome::Failed(_) => (o, t, f + 1),
+        })
+    // SOLUTION-END
 }
 
 /// Given: the real fetcher used by `main`.

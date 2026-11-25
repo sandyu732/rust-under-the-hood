@@ -1,4 +1,3 @@
-#![allow(unused)] // TODO: delete this line once the lab is done
 //! Lab 4.1 — Refactor away panics and matches with `?`.
 //!
 //! This is Lab 1.4 again, but now `run` returns `Box<dyn Error>` and every
@@ -12,10 +11,28 @@
 use std::error::Error;
 
 pub fn format_in_base(n: u64, base: &str) -> Option<String> {
-    todo!("lab-4-1-cli-errors: implement me")
+    // SOLUTION-START
+    match base.to_ascii_lowercase().as_str() {
+        "bin" => Some(format!("{n:#b}")),
+        "oct" => Some(format!("{n:#o}")),
+        "hex" => Some(format!("{n:#x}")),
+        _ => None,
+    }
+    // SOLUTION-END
 }
 
 /// `args` excludes the program name: `["255", "hex"]`.
 pub fn run(args: &[String]) -> Result<String, Box<dyn Error>> {
-    todo!("lab-4-1-cli-errors: implement me")
+    // SOLUTION-START
+    let number = args.first().ok_or("missing <number> argument")?;
+    let base = args.get(1).ok_or("missing <bin|oct|hex> argument")?;
+    if args.len() > 2 {
+        return Err("too many arguments".into());
+    }
+    let n: u64 = number
+        .parse()
+        .map_err(|e| format!("'{number}' is not a valid number: {e}"))?;
+    let out = format_in_base(n, base).ok_or_else(|| format!("unknown base '{base}'"))?;
+    Ok(out)
+    // SOLUTION-END
 }

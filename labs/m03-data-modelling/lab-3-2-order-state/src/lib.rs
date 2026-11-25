@@ -1,4 +1,3 @@
-#![allow(unused)] // TODO: delete this line once the lab is done
 //! Lab 3.2 — Type-safe order state machine.
 //!
 //!   Draft ──submit──▶ Submitted ──approve──▶ Approved ──ship──▶ Shipped
@@ -52,46 +51,119 @@ pub enum OrderError {
 impl Order {
     /// An empty draft.
     pub fn new() -> Self {
-        todo!("lab-3-2-order-state: implement me")
+        // SOLUTION-START
+        Order::Draft { items: Vec::new() }
+        // SOLUTION-END
     }
 
     /// "draft" | "submitted" | "approved" | "rejected" | "shipped"
     pub fn status(&self) -> &'static str {
-        todo!("lab-3-2-order-state: implement me")
+        // SOLUTION-START
+        match self {
+            Order::Draft { .. } => "draft",
+            Order::Submitted { .. } => "submitted",
+            Order::Approved { .. } => "approved",
+            Order::Rejected { .. } => "rejected",
+            Order::Shipped { .. } => "shipped",
+        }
+        // SOLUTION-END
     }
 
     pub fn items(&self) -> &[Item] {
-        todo!("lab-3-2-order-state: implement me")
+        // SOLUTION-START
+        match self {
+            Order::Draft { items }
+            | Order::Submitted { items, .. }
+            | Order::Approved { items, .. }
+            | Order::Rejected { items, .. }
+            | Order::Shipped { items, .. } => items,
+        }
+        // SOLUTION-END
     }
 
     pub fn total_cents(&self) -> u64 {
-        todo!("lab-3-2-order-state: implement me")
+        // SOLUTION-START
+        self.items()
+            .iter()
+            .map(|i| i.qty as u64 * i.unit_price_cents)
+            .sum()
+        // SOLUTION-END
     }
 
     /// Only drafts accept items.
     pub fn add_item(self, item: Item) -> Result<Order, OrderError> {
-        todo!("lab-3-2-order-state: implement me")
+        // SOLUTION-START
+        match self {
+            Order::Draft { mut items } => {
+                items.push(item);
+                Ok(Order::Draft { items })
+            }
+            other => Err(other.invalid("add_item")),
+        }
+        // SOLUTION-END
     }
 
     /// Draft → Submitted. Fails with `EmptyOrder` if there are no items.
     pub fn submit(self, by: &str) -> Result<Order, OrderError> {
-        todo!("lab-3-2-order-state: implement me")
+        // SOLUTION-START
+        match self {
+            Order::Draft { items } if items.is_empty() => Err(OrderError::EmptyOrder),
+            Order::Draft { items } => Ok(Order::Submitted {
+                items,
+                submitted_by: by.to_string(),
+            }),
+            other => Err(other.invalid("submit")),
+        }
+        // SOLUTION-END
     }
 
     /// Submitted → Approved.
     pub fn approve(self, by: &str) -> Result<Order, OrderError> {
-        todo!("lab-3-2-order-state: implement me")
+        // SOLUTION-START
+        match self {
+            Order::Submitted { items, .. } => Ok(Order::Approved {
+                items,
+                approved_by: by.to_string(),
+            }),
+            other => Err(other.invalid("approve")),
+        }
+        // SOLUTION-END
     }
 
     /// Submitted → Rejected.
     pub fn reject(self, reason: &str) -> Result<Order, OrderError> {
-        todo!("lab-3-2-order-state: implement me")
+        // SOLUTION-START
+        match self {
+            Order::Submitted { items, .. } => Ok(Order::Rejected {
+                items,
+                reason: reason.to_string(),
+            }),
+            other => Err(other.invalid("reject")),
+        }
+        // SOLUTION-END
     }
 
     /// Approved → Shipped.
     pub fn ship(self, tracking: &str) -> Result<Order, OrderError> {
-        todo!("lab-3-2-order-state: implement me")
+        // SOLUTION-START
+        match self {
+            Order::Approved { items, .. } => Ok(Order::Shipped {
+                items,
+                tracking: tracking.to_string(),
+            }),
+            other => Err(other.invalid("ship")),
+        }
+        // SOLUTION-END
     }
+
+    // SOLUTION-ONLY-START
+    fn invalid(&self, action: &'static str) -> OrderError {
+        OrderError::InvalidTransition {
+            from: self.status(),
+            action,
+        }
+    }
+    // SOLUTION-ONLY-END
 }
 
 impl Default for Order {

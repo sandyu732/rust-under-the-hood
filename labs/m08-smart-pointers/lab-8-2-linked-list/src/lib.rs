@@ -1,4 +1,3 @@
-#![allow(unused)] // TODO: delete this line once the lab is done
 //! Lab 8.2 — A singly linked stack with `Option<Box<Node<T>>>`.
 //!
 //! Companion reading: "Learning Rust With Entirely Too Many Linked Lists",
@@ -23,19 +22,36 @@ impl<T> List<T> {
     }
 
     pub fn push(&mut self, elem: T) {
-        todo!("lab-8-2-linked-list: implement me")
+        // SOLUTION-START
+        let new = Box::new(Node {
+            elem,
+            next: self.head.take(),
+        });
+        self.head = Some(new);
+        self.len += 1;
+        // SOLUTION-END
     }
 
     pub fn pop(&mut self) -> Option<T> {
-        todo!("lab-8-2-linked-list: implement me")
+        // SOLUTION-START
+        self.head.take().map(|node| {
+            self.head = node.next;
+            self.len -= 1;
+            node.elem
+        })
+        // SOLUTION-END
     }
 
     pub fn peek(&self) -> Option<&T> {
-        todo!("lab-8-2-linked-list: implement me")
+        // SOLUTION-START
+        self.head.as_ref().map(|n| &n.elem)
+        // SOLUTION-END
     }
 
     pub fn peek_mut(&mut self) -> Option<&mut T> {
-        todo!("lab-8-2-linked-list: implement me")
+        // SOLUTION-START
+        self.head.as_mut().map(|n| &mut n.elem)
+        // SOLUTION-END
     }
 
     pub fn len(&self) -> usize {
@@ -48,7 +64,16 @@ impl<T> List<T> {
 
     /// Reverse in place by relinking nodes — no allocation, no element moves.
     pub fn reverse(&mut self) {
-        todo!("lab-8-2-linked-list: implement me")
+        // SOLUTION-START
+        let mut prev: Link<T> = None;
+        let mut cur = self.head.take();
+        while let Some(mut node) = cur {
+            cur = node.next.take();
+            node.next = prev;
+            prev = Some(node);
+        }
+        self.head = prev;
+        // SOLUTION-END
     }
 
     pub fn iter(&self) -> Iter<'_, T> {
@@ -64,9 +89,21 @@ impl<T> Default for List<T> {
     }
 }
 
-// TODO: the default (recursive) drop overflows the stack on a very long list
-// (see tests/drop_long.rs). Write `impl<T> Drop for List<T>` here that
-// unlinks the nodes in a loop instead.
+// SOLUTION-START
+//~ // TODO: the default (recursive) drop overflows the stack on a very long list
+//~ // (see tests/drop_long.rs). Write `impl<T> Drop for List<T>` here that
+//~ // unlinks the nodes in a loop instead.
+/// The default (recursive) drop would overflow the stack on a very long list.
+/// Drop iteratively instead.
+impl<T> Drop for List<T> {
+    fn drop(&mut self) {
+        let mut cur = self.head.take();
+        while let Some(mut node) = cur {
+            cur = node.next.take();
+        }
+    }
+}
+// SOLUTION-END
 
 /// Consuming iterator: `for x in list`.
 pub struct IntoIter<T>(List<T>);
@@ -74,7 +111,9 @@ pub struct IntoIter<T>(List<T>);
 impl<T> Iterator for IntoIter<T> {
     type Item = T;
     fn next(&mut self) -> Option<T> {
-        todo!("lab-8-2-linked-list: implement me")
+        // SOLUTION-START
+        self.0.pop()
+        // SOLUTION-END
     }
 }
 
@@ -94,7 +133,12 @@ pub struct Iter<'a, T> {
 impl<'a, T> Iterator for Iter<'a, T> {
     type Item = &'a T;
     fn next(&mut self) -> Option<&'a T> {
-        todo!("lab-8-2-linked-list: implement me")
+        // SOLUTION-START
+        self.next.map(|node| {
+            self.next = node.next.as_deref();
+            &node.elem
+        })
+        // SOLUTION-END
     }
 }
 

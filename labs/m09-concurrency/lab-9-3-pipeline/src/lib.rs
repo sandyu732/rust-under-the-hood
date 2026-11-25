@@ -1,4 +1,3 @@
-#![allow(unused)] // TODO: delete this line once the lab is done
 //! Lab 9.3 — A bounded three-stage pipeline with clean shutdown.
 //!
 //!   reader thread ──sync_channel(cap)──▶ parser thread ──sync_channel(cap)──▶ collector (caller)
@@ -26,7 +25,17 @@ pub struct Report {
 
 /// `"alice,42"` → `Some(Record)`. Anything else → `None`.
 pub fn parse_record(line: &str) -> Option<Record> {
-    todo!("lab-9-3-pipeline: implement me")
+    // SOLUTION-START
+    let (name, score) = line.split_once(',')?;
+    let name = name.trim();
+    if name.is_empty() {
+        return None;
+    }
+    Some(Record {
+        name: name.to_string(),
+        score: score.trim().parse().ok()?,
+    })
+    // SOLUTION-END
 }
 
 /// Run the pipeline. Order of records must be preserved.
@@ -35,5 +44,40 @@ where
     I: IntoIterator<Item = String> + Send + 'static,
     I::IntoIter: Send,
 {
-    todo!("lab-9-3-pipeline: implement me")
+    // SOLUTION-START
+    let (line_tx, line_rx) = sync_channel::<String>(capacity);
+    let (rec_tx, rec_rx) = sync_channel::<Option<Record>>(capacity);
+
+    let reader = thread::spawn(move || {
+        for line in lines {
+            if line_tx.send(line).is_err() {
+                break; // downstream hung up
+            }
+        }
+        // line_tx dropped here → parser's loop ends
+    });
+
+    let parser = thread::spawn(move || {
+        for line in line_rx {
+            if rec_tx.send(parse_record(&line)).is_err() {
+                break;
+            }
+        }
+        // rec_tx dropped here → collector's loop ends
+    });
+
+    let mut report = Report {
+        records: Vec::new(),
+        rejected: 0,
+    };
+    for parsed in rec_rx {
+        match parsed {
+            Some(r) => report.records.push(r),
+            None => report.rejected += 1,
+        }
+    }
+    reader.join().unwrap();
+    parser.join().unwrap();
+    report
+    // SOLUTION-END
 }

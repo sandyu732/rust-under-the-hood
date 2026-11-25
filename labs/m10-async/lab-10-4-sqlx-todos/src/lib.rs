@@ -1,4 +1,3 @@
-#![allow(unused)] // TODO: delete this line once the lab is done
 //! Lab 10.4 — The Lab 10.3 API backed by SQLite with sqlx.
 //!
 //!   cargo run -p lab-10-4-sqlx-todos                 # uses ./todos.db
@@ -77,7 +76,20 @@ impl From<sqlx::Error> for ApiError {
 /// real error with `tracing::error!`, never leak it to the client).
 impl IntoResponse for ApiError {
     fn into_response(self) -> Response {
-        todo!("lab-10-4-sqlx-todos: implement me")
+        // SOLUTION-START
+        let (status, message) = match self {
+            ApiError::NotFound => (StatusCode::NOT_FOUND, "not found".to_string()),
+            ApiError::Validation(m) => (StatusCode::UNPROCESSABLE_ENTITY, m),
+            ApiError::Database(e) => {
+                tracing::error!("database error: {e}");
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    "internal error".to_string(),
+                )
+            }
+        };
+        (status, Json(serde_json::json!({ "error": message }))).into_response()
+        // SOLUTION-END
     }
 }
 
@@ -91,7 +103,17 @@ pub async fn connect(url: &str) -> Result<SqlitePool, sqlx::Error> {
         .max_connections(max)
         .connect_with(options)
         .await?;
-    // TODO: run a CREATE TABLE IF NOT EXISTS todos (id TEXT PRIMARY KEY, title TEXT NOT NULL, done BOOLEAN NOT NULL)
+    // SOLUTION-START: // TODO: run a CREATE TABLE IF NOT EXISTS todos (id TEXT PRIMARY KEY, title TEXT NOT NULL, done BOOLEAN NOT NULL)
+    sqlx::query(
+        "CREATE TABLE IF NOT EXISTS todos (
+            id    TEXT PRIMARY KEY,
+            title TEXT NOT NULL,
+            done  BOOLEAN NOT NULL DEFAULT FALSE
+        )",
+    )
+    .execute(&pool)
+    .await?;
+    // SOLUTION-END
     Ok(pool)
 }
 
@@ -107,22 +129,62 @@ pub fn app(pool: SqlitePool) -> Router {
         .with_state(pool)
 }
 
+// SOLUTION-ONLY-START
+fn validate_title(title: &str) -> Result<String, ApiError> {
+    let t = title.trim();
+    if t.is_empty() {
+        Err(ApiError::Validation("title must not be empty".into()))
+    } else {
+        Ok(t.to_string())
+    }
+}
+
+async fn fetch(pool: &SqlitePool, id: Uuid) -> Result<Todo, ApiError> {
+    sqlx::query_as::<_, Row>("SELECT id, title, done FROM todos WHERE id = ?")
+        .bind(id.to_string())
+        .fetch_optional(pool)
+        .await?
+        .map(Todo::from)
+        .ok_or(ApiError::NotFound)
+}
+// SOLUTION-ONLY-END
+
 pub async fn list_todos(State(pool): State<SqlitePool>) -> Result<Json<Vec<Todo>>, ApiError> {
-    todo!("lab-10-4-sqlx-todos: implement me")
+    // SOLUTION-START
+    let rows = sqlx::query_as::<_, Row>("SELECT id, title, done FROM todos ORDER BY title, id")
+        .fetch_all(&pool)
+        .await?;
+    Ok(Json(rows.into_iter().map(Todo::from).collect()))
+    // SOLUTION-END
 }
 
 pub async fn create_todo(
     State(pool): State<SqlitePool>,
     Json(input): Json<CreateTodo>,
 ) -> Result<(StatusCode, Json<Todo>), ApiError> {
-    todo!("lab-10-4-sqlx-todos: implement me")
+    // SOLUTION-START
+    let todo = Todo {
+        id: Uuid::new_v4(),
+        title: validate_title(&input.title)?,
+        done: false,
+    };
+    sqlx::query("INSERT INTO todos (id, title, done) VALUES (?, ?, ?)")
+        .bind(todo.id.to_string())
+        .bind(&todo.title)
+        .bind(todo.done)
+        .execute(&pool)
+        .await?;
+    Ok((StatusCode::CREATED, Json(todo)))
+    // SOLUTION-END
 }
 
 pub async fn get_todo(
     State(pool): State<SqlitePool>,
     Path(id): Path<Uuid>,
 ) -> Result<Json<Todo>, ApiError> {
-    todo!("lab-10-4-sqlx-todos: implement me")
+    // SOLUTION-START
+    Ok(Json(fetch(&pool, id).await?))
+    // SOLUTION-END
 }
 
 pub async fn update_todo(
@@ -130,12 +192,36 @@ pub async fn update_todo(
     Path(id): Path<Uuid>,
     Json(input): Json<UpdateTodo>,
 ) -> Result<Json<Todo>, ApiError> {
-    todo!("lab-10-4-sqlx-todos: implement me")
+    // SOLUTION-START
+    let mut todo = fetch(&pool, id).await?;
+    if let Some(title) = input.title {
+        todo.title = validate_title(&title)?;
+    }
+    if let Some(done) = input.done {
+        todo.done = done;
+    }
+    sqlx::query("UPDATE todos SET title = ?, done = ? WHERE id = ?")
+        .bind(&todo.title)
+        .bind(todo.done)
+        .bind(id.to_string())
+        .execute(&pool)
+        .await?;
+    Ok(Json(todo))
+    // SOLUTION-END
 }
 
 pub async fn delete_todo(
     State(pool): State<SqlitePool>,
     Path(id): Path<Uuid>,
 ) -> Result<StatusCode, ApiError> {
-    todo!("lab-10-4-sqlx-todos: implement me")
+    // SOLUTION-START
+    let result = sqlx::query("DELETE FROM todos WHERE id = ?")
+        .bind(id.to_string())
+        .execute(&pool)
+        .await?;
+    if result.rows_affected() == 0 {
+        return Err(ApiError::NotFound);
+    }
+    Ok(StatusCode::NO_CONTENT)
+    // SOLUTION-END
 }

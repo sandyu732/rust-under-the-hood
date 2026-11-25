@@ -1,4 +1,3 @@
-#![allow(unused)] // TODO: delete this line once the lab is done
 //! Lab 9.4 — A thread-safe memoising cache.
 //!
 //! `get_or_insert_with` must NOT hold the write lock while running `f`:
@@ -22,15 +21,21 @@ impl<K: Eq + Hash + Clone, V: Clone> Cache<K, V> {
     }
 
     pub fn get(&self, key: &K) -> Option<V> {
-        todo!("lab-9-4-concurrent-cache: implement me")
+        // SOLUTION-START
+        self.inner.read().unwrap().get(key).cloned()
+        // SOLUTION-END
     }
 
     pub fn insert(&self, key: K, value: V) {
-        todo!("lab-9-4-concurrent-cache: implement me")
+        // SOLUTION-START
+        self.inner.write().unwrap().insert(key, value);
+        // SOLUTION-END
     }
 
     pub fn len(&self) -> usize {
-        todo!("lab-9-4-concurrent-cache: implement me")
+        // SOLUTION-START
+        self.inner.read().unwrap().len()
+        // SOLUTION-END
     }
 
     pub fn is_empty(&self) -> bool {
@@ -41,7 +46,18 @@ impl<K: Eq + Hash + Clone, V: Clone> Cache<K, V> {
     /// If two threads race, both may run `f`, but every caller gets the SAME
     /// stored value (the first one inserted).
     pub fn get_or_insert_with(&self, key: K, f: impl FnOnce() -> V) -> V {
-        todo!("lab-9-4-concurrent-cache: implement me")
+        // SOLUTION-START
+        if let Some(v) = self.get(&key) {
+            return v;
+        }
+        let computed = f(); // no lock held here
+        self.inner
+            .write()
+            .unwrap()
+            .entry(key)
+            .or_insert(computed)
+            .clone()
+        // SOLUTION-END
     }
 }
 

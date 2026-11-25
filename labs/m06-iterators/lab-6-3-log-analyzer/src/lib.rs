@@ -1,4 +1,3 @@
-#![allow(unused)] // TODO: delete this line once the lab is done
 //! Lab 6.3 — Log analyzer.
 //!
 //! Line format: `2026-11-01T10:00:00Z INFO /api/users 123ms`
@@ -39,28 +38,86 @@ pub enum ParseError {
 impl FromStr for Level {
     type Err = ParseError;
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        todo!("lab-6-3-log-analyzer: implement me")
+        // SOLUTION-START
+        match s {
+            "DEBUG" => Ok(Level::Debug),
+            "INFO" => Ok(Level::Info),
+            "WARN" => Ok(Level::Warn),
+            "ERROR" => Ok(Level::Error),
+            other => Err(ParseError::Level(other.to_string())),
+        }
+        // SOLUTION-END
     }
 }
 
 /// Parse one line. Latency must end in "ms".
 pub fn parse_line(line: &str) -> Result<LogLine, ParseError> {
-    todo!("lab-6-3-log-analyzer: implement me")
+    // SOLUTION-START
+    let fields: Vec<&str> = line.split_whitespace().collect();
+    let [ts, level, endpoint, latency] = fields[..] else {
+        return Err(ParseError::FieldCount(fields.len()));
+    };
+    let latency_ms = latency
+        .strip_suffix("ms")
+        .and_then(|n| n.parse().ok())
+        .ok_or_else(|| ParseError::Latency(latency.to_string()))?;
+    Ok(LogLine {
+        timestamp: ts.into(),
+        level: level.parse()?,
+        endpoint: endpoint.into(),
+        latency_ms,
+    })
+    // SOLUTION-END
 }
 
 pub fn count_by_level(lines: &[LogLine]) -> HashMap<Level, usize> {
-    todo!("lab-6-3-log-analyzer: implement me")
+    // SOLUTION-START
+    lines.iter().fold(HashMap::new(), |mut m, l| {
+        *m.entry(l.level).or_insert(0) += 1;
+        m
+    })
+    // SOLUTION-END
 }
 
 /// The `n` endpoints with the highest AVERAGE latency, highest first.
 pub fn slowest_endpoints(lines: &[LogLine], n: usize) -> Vec<(String, f64)> {
-    todo!("lab-6-3-log-analyzer: implement me")
+    // SOLUTION-START
+    let mut totals: HashMap<&str, (u64, u64)> = HashMap::new();
+    for l in lines {
+        let e = totals.entry(&l.endpoint).or_default();
+        e.0 += l.latency_ms as u64;
+        e.1 += 1;
+    }
+    let mut avgs: Vec<(String, f64)> = totals
+        .into_iter()
+        .map(|(k, (sum, cnt))| (k.to_string(), sum as f64 / cnt as f64))
+        .collect();
+    avgs.sort_by(|a, b| b.1.total_cmp(&a.1).then_with(|| a.0.cmp(&b.0)));
+    avgs.truncate(n);
+    avgs
+    // SOLUTION-END
 }
 
 /// p95 latency per endpoint using the nearest-rank method:
 /// sort the latencies, take the element at index `ceil(0.95 * len) - 1`.
 pub fn p95_by_endpoint(lines: &[LogLine]) -> BTreeMap<String, u32> {
-    todo!("lab-6-3-log-analyzer: implement me")
+    // SOLUTION-START
+    let mut groups: BTreeMap<String, Vec<u32>> = BTreeMap::new();
+    for l in lines {
+        groups
+            .entry(l.endpoint.clone())
+            .or_default()
+            .push(l.latency_ms);
+    }
+    groups
+        .into_iter()
+        .map(|(k, mut v)| {
+            v.sort_unstable();
+            let idx = ((0.95 * v.len() as f64).ceil() as usize).saturating_sub(1);
+            (k, v[idx])
+        })
+        .collect()
+    // SOLUTION-END
 }
 
 /// Given: deterministic fake log generator (no `rand` crate needed).

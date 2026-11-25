@@ -1,4 +1,3 @@
-#![allow(unused)] // TODO: delete this line once the lab is done
 //! Lab 5.5 — Extension traits and blanket implementations.
 //!
 //! You can add methods to types you don't own (like `str` and `[f64]`) by
@@ -13,7 +12,9 @@ pub trait Shout {
 
 impl Shout for str {
     fn shout(&self) -> String {
-        todo!("lab-5-5-extension-trait: implement me")
+        // SOLUTION-START
+        format!("{}!", self.to_uppercase())
+        // SOLUTION-END
     }
 }
 
@@ -24,7 +25,9 @@ pub trait Mean {
 
 impl Mean for [f64] {
     fn mean(&self) -> Option<f64> {
-        todo!("lab-5-5-extension-trait: implement me")
+        // SOLUTION-START
+        (!self.is_empty()).then(|| self.iter().sum::<f64>() / self.len() as f64)
+        // SOLUTION-END
     }
 }
 
@@ -36,6 +39,8 @@ pub trait Describe {
 /// Blanket impl: EVERY type that is `Debug` gets `describe()`.
 impl<T: Debug + ?Sized> Describe for T {
     fn describe(&self) -> String {
-        todo!("lab-5-5-extension-trait: implement me")
+        // SOLUTION-START
+        format!("<<{self:?}>>")
+        // SOLUTION-END
     }
 }

@@ -1,4 +1,3 @@
-#![allow(unused)] // TODO: delete this line once the lab is done
 //! Lab 9.2 — Find duplicate files in parallel, two ways.
 //!
 //!   cargo run --release -p lab-9-2-file-hasher -- ~/Downloads
@@ -18,7 +17,10 @@ use std::thread;
 
 /// Lower-case hex SHA-256 of the file's contents.
 pub fn hash_file(path: &Path) -> io::Result<String> {
-    todo!("lab-9-2-file-hasher: implement me")
+    // SOLUTION-START
+    let bytes = std::fs::read(path)?;
+    Ok(hex::encode(Sha256::digest(&bytes)))
+    // SOLUTION-END
 }
 
 /// Every regular file under `root`, recursively (given).
@@ -49,10 +51,49 @@ pub fn group_duplicates(hashes: impl IntoIterator<Item = (PathBuf, String)>) -> 
 /// Version 1: `workers` threads pulling paths from a shared job channel.
 /// Unreadable files are skipped.
 pub fn find_duplicates_pool(root: &Path, workers: usize) -> Vec<Vec<PathBuf>> {
-    todo!("lab-9-2-file-hasher: implement me")
+    // SOLUTION-START
+    let (job_tx, job_rx) = mpsc::channel::<PathBuf>();
+    let (result_tx, result_rx) = mpsc::channel::<(PathBuf, String)>();
+    let job_rx = Arc::new(Mutex::new(job_rx));
+
+    let handles: Vec<_> = (0..workers.max(1))
+        .map(|_| {
+            let rx = Arc::clone(&job_rx);
+            let tx = result_tx.clone();
+            thread::spawn(move || {
+                loop {
+                    // Hold the lock only while receiving, not while hashing.
+                    let job = rx.lock().unwrap().recv();
+                    let Ok(path) = job else { break }; // channel closed: no more work
+                    if let Ok(hash) = hash_file(&path) {
+                        let _ = tx.send((path, hash));
+                    }
+                }
+            })
+        })
+        .collect();
+    drop(result_tx); // only workers hold senders now
+
+    for path in list_files(root) {
+        job_tx.send(path).unwrap();
+    }
+    drop(job_tx); // closing the job channel tells workers to stop
+
+    let groups = group_duplicates(result_rx); // Receiver is an iterator until all senders drop
+    for h in handles {
+        h.join().unwrap();
+    }
+    groups
+    // SOLUTION-END
 }
 
 /// Version 2: the same in a few lines with rayon.
 pub fn find_duplicates_rayon(root: &Path) -> Vec<Vec<PathBuf>> {
-    todo!("lab-9-2-file-hasher: implement me")
+    // SOLUTION-START
+    let hashes: Vec<(PathBuf, String)> = list_files(root)
+        .into_par_iter()
+        .filter_map(|p| hash_file(&p).ok().map(|h| (p, h)))
+        .collect();
+    group_duplicates(hashes)
+    // SOLUTION-END
 }

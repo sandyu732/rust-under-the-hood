@@ -1,4 +1,3 @@
-#![allow(unused)] // TODO: delete this line once the lab is done
 //! Lab 5.2 — Vector math with operator overloading and conversion traits.
 //! Goal: `let v: Vec2 = (1.0, 2.0).into(); let w = v + v * 3.0 - Vec2::default();`
 
@@ -17,30 +16,41 @@ impl Vec2 {
     }
 
     pub fn length(self) -> f64 {
-        todo!("lab-5-2-vec2: implement me")
+        // SOLUTION-START
+        self.x.hypot(self.y)
+        // SOLUTION-END
     }
 
     pub fn dot(self, other: Vec2) -> f64 {
-        todo!("lab-5-2-vec2: implement me")
+        // SOLUTION-START
+        self.x * other.x + self.y * other.y
+        // SOLUTION-END
     }
 
     /// Unit vector in the same direction; `None` for the zero vector.
     pub fn normalized(self) -> Option<Vec2> {
-        todo!("lab-5-2-vec2: implement me")
+        // SOLUTION-START
+        let len = self.length();
+        (len > 0.0).then(|| self * (1.0 / len))
+        // SOLUTION-END
     }
 }
 
 impl Add for Vec2 {
     type Output = Vec2;
     fn add(self, o: Vec2) -> Vec2 {
-        todo!("lab-5-2-vec2: implement me")
+        // SOLUTION-START
+        Vec2::new(self.x + o.x, self.y + o.y)
+        // SOLUTION-END
     }
 }
 
 impl Sub for Vec2 {
     type Output = Vec2;
     fn sub(self, o: Vec2) -> Vec2 {
-        todo!("lab-5-2-vec2: implement me")
+        // SOLUTION-START
+        Vec2::new(self.x - o.x, self.y - o.y)
+        // SOLUTION-END
     }
 }
 
@@ -48,7 +58,9 @@ impl Sub for Vec2 {
 impl Mul<f64> for Vec2 {
     type Output = Vec2;
     fn mul(self, k: f64) -> Vec2 {
-        todo!("lab-5-2-vec2: implement me")
+        // SOLUTION-START
+        Vec2::new(self.x * k, self.y * k)
+        // SOLUTION-END
     }
 }
 
@@ -57,32 +69,43 @@ impl Mul<f64> for Vec2 {
 impl Mul<Vec2> for f64 {
     type Output = Vec2;
     fn mul(self, v: Vec2) -> Vec2 {
-        todo!("lab-5-2-vec2: implement me")
+        // SOLUTION-START
+        v * self
+        // SOLUTION-END
     }
 }
 
 impl Neg for Vec2 {
     type Output = Vec2;
     fn neg(self) -> Vec2 {
-        todo!("lab-5-2-vec2: implement me")
+        // SOLUTION-START
+        Vec2::new(-self.x, -self.y)
+        // SOLUTION-END
     }
 }
 
 impl AddAssign for Vec2 {
     fn add_assign(&mut self, o: Vec2) {
-        todo!("lab-5-2-vec2: implement me")
+        // SOLUTION-START
+        self.x += o.x;
+        self.y += o.y;
+        // SOLUTION-END
     }
 }
 
 /// `(1, 2.5)` — use `{}` for each f64.
 impl fmt::Display for Vec2 {
     fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
-        todo!("lab-5-2-vec2: implement me")
+        // SOLUTION-START
+        write!(f, "({}, {})", self.x, self.y)
+        // SOLUTION-END
     }
 }
 
 impl From<(f64, f64)> for Vec2 {
     fn from((x, y): (f64, f64)) -> Self {
-        todo!("lab-5-2-vec2: implement me")
+        // SOLUTION-START
+        Vec2::new(x, y)
+        // SOLUTION-END
     }
 }

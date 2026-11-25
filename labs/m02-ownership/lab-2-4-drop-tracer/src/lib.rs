@@ -1,4 +1,3 @@
-#![allow(unused)] // TODO: delete this line once the lab is done
 //! Lab 2.4 — Drop tracer.
 //!
 //! 1. Implement `Drop` for `Noisy` so it records its name with `log_drop`.
@@ -26,7 +25,9 @@ pub struct Noisy(pub &'static str);
 
 impl Drop for Noisy {
     fn drop(&mut self) {
-        // call log_drop with this value's name
+        // SOLUTION-START: // call log_drop with this value's name
+        log_drop(self.0);
+        // SOLUTION-END
     }
 }
 
@@ -52,5 +53,12 @@ pub fn scenario() {
 
 /// Your prediction of the drop order of `scenario()`.
 pub fn predicted_order() -> Vec<&'static str> {
-    todo!("lab-2-4-drop-tracer: implement me")
+    // SOLUTION-START
+    // inner scope drops in reverse declaration order: c, b
+    // d moves into `consume` and drops at the end of it
+    // g is dropped explicitly
+    // at the end of scenario, locals drop in reverse: _h, then _v (elements in
+    // order e, f), then _a
+    vec!["c", "b", "d", "g", "h", "e", "f", "a"]
+    // SOLUTION-END
 }

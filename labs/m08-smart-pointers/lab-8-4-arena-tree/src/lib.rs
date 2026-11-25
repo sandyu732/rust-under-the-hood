@@ -1,4 +1,3 @@
-#![allow(unused)] // TODO: delete this line once the lab is done
 //! Lab 8.4 — The same tree as Lab 8.3, rebuilt as an arena with indices.
 //!
 //! No `Rc`, no `RefCell`, no `Weak`: the `Tree` owns every node in a `Vec`,
@@ -23,7 +22,15 @@ pub struct Tree {
 impl Tree {
     /// A tree containing only a root node.
     pub fn with_root(value: i32) -> Self {
-        todo!("lab-8-4-arena-tree: implement me")
+        // SOLUTION-START
+        Tree {
+            nodes: vec![NodeData {
+                value,
+                parent: None,
+                children: Vec::new(),
+            }],
+        }
+        // SOLUTION-END
     }
 
     pub fn root(&self) -> NodeId {
@@ -31,35 +38,65 @@ impl Tree {
     }
 
     pub fn add_child(&mut self, parent: NodeId, value: i32) -> NodeId {
-        todo!("lab-8-4-arena-tree: implement me")
+        // SOLUTION-START
+        let id = NodeId(self.nodes.len());
+        self.nodes.push(NodeData {
+            value,
+            parent: Some(parent),
+            children: Vec::new(),
+        });
+        self.nodes[parent.0].children.push(id);
+        id
+        // SOLUTION-END
     }
 
     pub fn value(&self, id: NodeId) -> i32 {
-        todo!("lab-8-4-arena-tree: implement me")
+        // SOLUTION-START
+        self.nodes[id.0].value
+        // SOLUTION-END
     }
 
     pub fn set_value(&mut self, id: NodeId, value: i32) {
-        todo!("lab-8-4-arena-tree: implement me")
+        // SOLUTION-START
+        self.nodes[id.0].value = value;
+        // SOLUTION-END
     }
 
     pub fn parent(&self, id: NodeId) -> Option<NodeId> {
-        todo!("lab-8-4-arena-tree: implement me")
+        // SOLUTION-START
+        self.nodes[id.0].parent
+        // SOLUTION-END
     }
 
     pub fn children(&self, id: NodeId) -> &[NodeId] {
-        todo!("lab-8-4-arena-tree: implement me")
+        // SOLUTION-START
+        &self.nodes[id.0].children
+        // SOLUTION-END
     }
 
     pub fn path_to_root(&self, id: NodeId) -> Vec<i32> {
-        todo!("lab-8-4-arena-tree: implement me")
+        // SOLUTION-START
+        std::iter::successors(Some(id), |&n| self.parent(n))
+            .map(|n| self.value(n))
+            .collect()
+        // SOLUTION-END
     }
 
     pub fn sum_subtree(&self, id: NodeId) -> i32 {
-        todo!("lab-8-4-arena-tree: implement me")
+        // SOLUTION-START
+        self.value(id)
+            + self
+                .children(id)
+                .iter()
+                .map(|&c| self.sum_subtree(c))
+                .sum::<i32>()
+        // SOLUTION-END
     }
 
     pub fn depth(&self, id: NodeId) -> usize {
-        todo!("lab-8-4-arena-tree: implement me")
+        // SOLUTION-START
+        self.path_to_root(id).len() - 1
+        // SOLUTION-END
     }
 
     pub fn len(&self) -> usize {
